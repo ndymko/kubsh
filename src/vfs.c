@@ -211,8 +211,17 @@ int users_mkdir(const char* path, mode_t mode) {
             username,
             NULL
         };
+        char* sudo_adduser_command[] = {
+            "sudo",
+            "adduser",
+            "--disabled-password",
+            "--gecos",
+            "",
+            username,
+            NULL
+        };
 
-        execute_command(adduser_command);
+        execute_command(geteuid() == 0 ? adduser_command : sudo_adduser_command);
 
         pwd = getpwnam(username);
 

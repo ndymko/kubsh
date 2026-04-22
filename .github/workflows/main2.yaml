@@ -29,6 +29,7 @@ jobs:
       - name: Run tests in container
         run: |
           docker exec kubsh-test bash -c "
+            export KUBSH_MOUNTPOINT=/opt/users
             cd /opt && ./check.sh
           "
 

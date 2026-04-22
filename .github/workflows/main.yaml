@@ -43,6 +43,7 @@ jobs:
       - name: Run tests in container
         run: |
           docker exec kubsh-test bash -c "
+            export KUBSH_MOUNTPOINT=/opt/users
             cd /mnt && apt install -y ./kubsh.deb
             cd /opt && pytest -v
           "

@@ -11,6 +11,25 @@
 #include "vfs.h"
 
 char* init_mountpoint() {
+    char* mountpoint_override = getenv("KUBSH_MOUNTPOINT");
+
+    if (mountpoint_override && mountpoint_override[0] != '\0') {
+        char* mountpoint = strdup(mountpoint_override);
+
+        if (!mountpoint) {
+            fprintf(stderr, "\033[1;31mAllocation error\033[0m");
+            exit(EXIT_FAILURE);
+        }
+
+        if (mkdir(mountpoint, 0755) != 0 && errno != EEXIST) {
+            fprintf(stderr, "\033[1;31mFailed to create mountpoint\033[0m");
+            free(mountpoint);
+            exit(EXIT_FAILURE);
+        }
+
+        return mountpoint;
+    }
+
     char* home = getenv("HOME");
 
     if (!home) {
@@ -47,11 +66,14 @@ void* fuse_thread_function(void* arg) {
     fuse_opt_add_arg(&args, "-odefault_permissions");
     fuse_opt_add_arg(&args, "-oauto_unmount");
 
+    char* mountpoint = init_mountpoint();
     struct fuse* fuse_instance = fuse_new(&args, &users_operations, sizeof(users_operations), NULL);
 
-    fuse_mount(fuse_instance, "/opt/users");
+    fuse_mount(fuse_instance, mountpoint);
 
     fuse_loop(fuse_instance);
+
+    free(mountpoint);
 
     return NULL;
 }
