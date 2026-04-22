@@ -4,7 +4,7 @@ on:
   push:
     branches: [ master ]
   workflow_dispatch:
- 
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -13,19 +13,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install Dependencies
+      - name: Build DEB package
         run: |
           sudo apt update
           sudo apt install -y cmake build-essential dpkg-dev libfuse3-dev libreadline-dev
-
-      - name: Build DEB Package
-        run: |
           make clean
           make package
 
       - name: Setup Docker container
-        run: | 
-          docker run -d --name kubsh-test \
+        run: |
+          docker run -v "$(pwd)/kubsh.deb:/mnt/kubsh.deb" -d --name kubsh-test \
           --device /dev/fuse --cap-add SYS_ADMIN \
           --security-opt apparmor:unconfined \
           tyvik/kubsh_test:master tail -f /dev/null
@@ -35,17 +32,12 @@ jobs:
           apt install -y fuse3 adduser
           ln -sf /usr/lib/x86_64-linux-gnu/libfuse3.so /usr/lib/x86_64-linux-gnu/libfuse3.so.3
           "
-        
-      - name: Copy files to container
-        run: |
-          docker cp kubsh.deb kubsh-test:/mnt/
 
       - name: Run tests in container
         run: |
           docker exec kubsh-test bash -c "
             export KUBSH_MOUNTPOINT=/opt/users
-            cd /mnt && apt install -y ./kubsh.deb
-            cd /opt && pytest -v
+            cd /opt && ./check.sh
           "
 
       - name: Upload artifact
